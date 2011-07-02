@@ -6,22 +6,33 @@ use Data::Dumper;
 use ZabbixAPI;
 
 my $za = ZabbixAPI->new("http://127.0.0.1/zabbix/");
-$za->auth("Admin", "PASSWORD");
+$za->auth("USER", "PASSWORD");
 
-# get Information
 print Dumper $za->apiinfo_version();
-print Dumper $za->hostgroupget({output => "extend"});
+#@response
+#$VAR1 = '1.3';
 
-# Create Host
-#my $groupid = $za->hostgroup_get({filter=>{name=>"Linux servers"}})->[0]->{groupid};
-#my $templateid = $za->template_get({filter=>{host=>"Template_Linux"}})->[0]->{templateid};
+print Dumper $za->hostgroup_get({output => "extend"});
+#@response
+#$VAR1 = [
+#          {
+#            'name' => 'Templates',
+#            'groupid' => '1',
+#            'internal' => '0'
+#          },
+#        ...
 
-#my $result = $za->host_create({
-#  host      => "api_test01",
-#  ip        => "192.168.1.200",
-#  port      => "10050",
-#  useip     => 1,
-#  groups    => [ { groupid => $groupid } ],
-#  templates => [ { templateid => $templateid } ]
-#});
-#print Dumper $result;
+print Dumper $za->hostgroup_get({output => "extend"}, 'name');
+#@response
+#$VAR1 = [
+#          'Templates',
+#          'Linux servers',
+#        ...
+
+print Dumper $za->hostgroup_get({output => "extend"}, 'groupid', 'name');
+#@response
+#$VAR1 = {
+#          '3' => 'Windows servers',
+#          '2' => 'Linux servers',
+#          '1' => 'Templates',
+#        ...

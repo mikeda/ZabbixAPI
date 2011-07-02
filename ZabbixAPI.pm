@@ -40,7 +40,7 @@ sub auth {
 
 sub call_api {
   my $self = shift;
-  my ($method, $params) = @_;
+  my ($method, $params, $key, $val) = @_;
   $params ||= {};
 
   my %request = (
@@ -68,7 +68,19 @@ sub call_api {
     die "API Error\n" . Dumper($api_res->{error});
   }
 
-  return $api_res->{result};
+  my $ret = $api_res->{result};
+  if(defined($key)){
+    if(defined($val)){
+      # return hash ref by key and val
+      my %h;
+      $h{$_->{$key}} = $_->{$val} for @$ret;
+      $ret = \%h;
+    }else{
+      # return array ref by key
+      $ret = [map {$_->{$key}} @$ret];
+    }
+  }
+  return $ret;
 }
 
 sub DESTROY {};
