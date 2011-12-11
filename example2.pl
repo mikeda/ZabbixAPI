@@ -7,15 +7,16 @@ use ZabbixAPI;
 
 # Create new host
 
-my $user       = "Admin";
-my $password   = "mikedax";
+my $zabbix_top = "http://127.0.0.1/zabbix/";
+my $user       = "USER";
+my $password   = "PASSWORD";
 
 my $hostname   = 'api_test01';
 my $ip         = '192.168.1.150';
 my @hostgroups = ('Linux servers', 'Zabbix servers');
 my @templates  = ('Template_Linux', 'Template_App_MySQL');
 
-my $za = ZabbixAPI->new("http://127.0.0.1/zabbix/");
+my $za = ZabbixAPI->new($zabbix_top);
 $za->auth($user, $password);
 
 my $groupids = $za->hostgroup_get(
