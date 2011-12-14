@@ -8,6 +8,8 @@ use ZabbixAPI;
 my $za = ZabbixAPI->new("http://127.0.0.1/zabbix/");
 $za->auth("USER", "PASSWORD");
 
+#$ZabbixAPI::DEBUG = 1;
+
 print Dumper $za->apiinfo_version();
 #@response
 #$VAR1 = '1.3';
