@@ -1,1 +1,36 @@
-ZabbixAPI tools for Perl
+This is an Zabbix Perl API.
+
+See:
+  http://www.zabbix.com/documentation/1.8/api
+
+Require:
+  Zabbix 1.8 or later
+  CPAN modules
+    JSON
+    LWP::UserAgent
+    Data::Dumper
+
+Usage:
+  use ZabbixAPI;
+  
+  ### initialize an object and get authenticated
+  my $za = ZabbixAPI->new("http://127.0.0.1/zabbix/");
+  $za->auth("api_user", "api_password");
+
+  ### To use "method.name" method, call method_name().
+  my $version = $za->apiinfo_version();
+  print "$version\n";
+  
+  ### The first argument is a reference of "params".
+  my $hosts = $za->host_get(
+    {
+      filter => {
+        host => [ 'test01', 'test02' ]
+      },
+      output => "extend"
+    }
+  );
+  for my $h (@$hosts){
+    print "host:". $h->{host} ." hostid:". $h->{hostid} ."\n";
+  }
+
