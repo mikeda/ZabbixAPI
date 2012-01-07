@@ -66,6 +66,7 @@ sub _call_api {
   );
   $DEBUG && _dprint("Request:\n" . $json_req);
 
+
   # POST HTTP request
   my $ua = LWP::UserAgent->new;
   my $http_res = $ua->post(
@@ -82,12 +83,14 @@ sub _call_api {
 
   $DEBUG && _dprint("Response:\n" . $json_res);
 
+
   # decode JSON response
   my $api_res = $self->{json}->decode($json_res);
   if($api_res->{error}){
     die "API Error\n" . Dumper($api_res->{error});
   }
   my $res = $api_res->{result};
+
 
   # modify result
   if(defined($keyname)){
@@ -116,7 +119,7 @@ sub _dprint {
   print STDERR "\n";
 }
 
-sub auth {
+sub login {
   my $self = shift;
   my ($user, $password) = @_;
 
@@ -125,7 +128,7 @@ sub auth {
     password => $password
   );
 
-  $self->{auth} = $self->_call_api('user.authenticate', \%params);
+  $self->{auth} = $self->_call_api('user.login', \%params);
 }
 
 1;

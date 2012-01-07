@@ -17,7 +17,7 @@ my @hostgroups = ('Linux servers', 'Zabbix servers');
 my @templates  = ('Template_Linux', 'Template_App_MySQL');
 
 my $za = ZabbixAPI->new($zabbix_top);
-$za->auth($user, $password);
+$za->login($user, $password);
 
 my $groupids = $za->hostgroup_get(
   { filter => {name => \@hostgroups} },

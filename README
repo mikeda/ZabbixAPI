@@ -13,9 +13,9 @@ Require:
 Usage:
   use ZabbixAPI;
   
-  ### initialize an object and get authenticated
+  ### initialize an object and login
   my $za = ZabbixAPI->new("http://127.0.0.1/zabbix/");
-  $za->auth("api_user", "api_password");
+  $za->login("api_user", "api_password");
 
   ### To use "method.name" method, call method_name().
   my $version = $za->apiinfo_version();

@@ -6,7 +6,7 @@ use Data::Dumper;
 use ZabbixAPI;
 
 my $za = ZabbixAPI->new("http://127.0.0.1/zabbix/");
-$za->auth("USER", "PASSWORD");
+$za->login("USER", "PASSWORD");
 
 #$ZabbixAPI::DEBUG = 1;
 
