@@ -2,39 +2,37 @@ package ZabbixAPI;
 
 use strict;
 use warnings;
-use Data::Dumper;
+
 use JSON;
 use LWP::UserAgent;
+use Data::Dumper;
 
 our $VERSION = "0.01";
 our $DEBUG   = 0;
 
 
 sub new {
-  my $class = shift;
-  my ($url, $id) = @_;
-  ### 同時に走らせるときはID変えないとダメなんだろうか？
+  my ($class, $url, $id) = @_;
   $id ||= 1;
 
-  my $self = bless {
-    url  => $url . 'api_jsonrpc.php',
+  if($url !~ /\/api_jsonrpc\.php$/){
+    if($url !~ /\/$/){
+      $url .= '/';
+    }
+    $url .= 'api_jsonrpc.php';
+  }
+
+  my $json = JSON->new->utf8;
+  $DEBUG && $json->pretty;
+
+  my $self = {
+    url  => $url,
     id   => $id,
-    auth => undef
+    auth => undef,
+    json => $json
   };
 
-  return $self;
-}
-
-sub auth {
-  my $self = shift;
-  my ($user, $password) = @_;
-
-  my %params = (
-    user     => $user,
-    password => $password
-  );
-
-  $self->{auth} = $self->_call_api('user.authenticate', \%params);
+  return bless $self, $class;
 }
 
 sub DESTROY {};
@@ -47,7 +45,7 @@ sub AUTOLOAD{
   if($method =~ tr/_/./ == 1){
     $self->_call_api($method, @_);
   }else{
-    die "Undefined Method $AUTOLOAD";
+    die "bad method:$AUTOLOAD";
   }
 }
 
@@ -56,82 +54,78 @@ sub _call_api {
   my ($method, $params, $keyname, $valname) = @_;
   $params ||= {};
 
-  my $json_request  = $self->_create_json_request($method, $params);
-
-  my $http_response = $self->_get_http_response($json_request);
-
-  my $api_response  = _get_api_response($http_response);
-
-  if(defined($keyname)){
-    if(defined($valname)){
-      my %h;
-      $h{$_->{$keyname}} = $_->{$valname} for @$api_response;
-      $api_response = \%h;
-    }else{
-      $api_response = [map {$_->{$keyname}} @$api_response];
+  # create JSON request
+  my $json_req = $self->{json}->encode(
+    {
+      method  => $method,
+      auth    => $self->{auth},
+      id      => $self->{id},
+      jsonrpc => '2.0',
+      params  => $params
     }
-  }
-
-  return $api_response;
-}
-
-sub _dprint {
-  my ($package, $filename, $line) = caller 0;
-  my @messages = @_;
-
-  @messages = map { (my $t= $_) =~ s/\n/\n# /g;$t } @messages;
-
-  print STDERR "# $package:$filename:$line\n";
-  for my $message (@messages){
-    print STDERR "# $message\n";
-  }
-}
-
-sub _create_json_request {
-  my ($self, $method, $params) = @_;
-  my %request = (
-    method  => $method,
-    auth    => $self->{auth},
-    id      => $self->{id},
-    jsonrpc => '2.0',
-    params  => $params,
   );
-  my $json_request = encode_json(\%request);
-  $DEBUG && _dprint('REQUEST JSON', $json_request);
+  $DEBUG && _dprint("Request:\n" . $json_req);
 
-  return $json_request;
-}
-
-sub _get_http_response {
-  my ($self, $json_request) = @_;
-
+  # POST HTTP request
   my $ua = LWP::UserAgent->new;
   my $http_res = $ua->post(
     $self->{url},
-    'Content-Type' => 'application/json-rpc',
+    'Content-Type' => "application/json-rpc",
     'User-Agent'   => "ZabbixAPI/mikeda v$VERSION",
-    Content        => $json_request
+    'Content'      => $json_req
   );
 
   if($http_res->is_error){
-    die "HTTP Error\n" . $http_res->status_line ."\n";
+    die "HTTP Error\n" . $http_res->status_line;
   }
+  my $json_res = $http_res->content;
 
-  $DEBUG && _dprint('RESPONSE JSON', $http_res->content);
-  return $http_res->content;
+  $DEBUG && _dprint("Response:\n" . $json_res);
 
-}
-
-sub _get_api_response {
-  my $http_res = shift;
-
-  my $api_res = decode_json($http_res);
+  # decode JSON response
+  my $api_res = $self->{json}->decode($json_res);
   if($api_res->{error}){
     die "API Error\n" . Dumper($api_res->{error});
   }
-  my $result = $api_res->{result};
+  my $res = $api_res->{result};
 
-  return $result;
+  # modify result
+  if(defined($keyname)){
+    if(defined($valname)){
+      # return hash
+      my %h;
+      $h{$_->{$keyname}} = $_->{$valname} for @$res;
+      $res = \%h;
+    }else{
+      # return array
+      $res = [map {$_->{$keyname}} @$res];
+    }
+  }
+
+  return $res;
+}
+
+sub _dprint {
+  my ($pkg, $file, $line) = caller 0;
+  my $msg = shift;
+
+  print STDERR "# $file:$line\n";
+  for my $m (split "\n", $msg){
+    print STDERR "# $m\n";
+  }
+  print STDERR "\n";
+}
+
+sub auth {
+  my $self = shift;
+  my ($user, $password) = @_;
+
+  my %params = (
+    user     => $user,
+    password => $password
+  );
+
+  $self->{auth} = $self->_call_api('user.authenticate', \%params);
 }
 
 1;
